@@ -1,4 +1,7 @@
 import React, { useEffect, useRef } from 'react';
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
+import { toast } from "sonner";
 
 interface CloudRendererProps {
   parameters: {
@@ -16,6 +19,21 @@ const CloudRenderer: React.FC<CloudRendererProps> = ({ parameters }) => {
   const glRef = useRef<WebGLRenderingContext | null>(null);
   const programRef = useRef<WebGLProgram | null>(null);
   const frameRef = useRef<number>(0);
+
+  const handleDownload = () => {
+    if (!canvasRef.current) return;
+    
+    try {
+      const link = document.createElement('a');
+      link.download = 'cloud-render.png';
+      link.href = canvasRef.current.toDataURL('image/png');
+      link.click();
+      toast.success("Image downloaded successfully");
+    } catch (error) {
+      toast.error("Failed to download image");
+      console.error("Download error:", error);
+    }
+  };
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -114,11 +132,21 @@ const CloudRenderer: React.FC<CloudRendererProps> = ({ parameters }) => {
   };
 
   return (
-    <canvas 
-      ref={canvasRef}
-      className="fixed inset-0 w-full h-full"
-      style={{ touchAction: 'none' }}
-    />
+    <div className="relative w-full h-full">
+      <canvas 
+        ref={canvasRef}
+        className="fixed inset-0 w-full h-full"
+        style={{ touchAction: 'none' }}
+      />
+      <Button
+        onClick={handleDownload}
+        className="fixed top-4 right-4 z-10"
+        variant="secondary"
+      >
+        <Download className="mr-2" />
+        Download
+      </Button>
+    </div>
   );
 };
 
