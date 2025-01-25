@@ -1,7 +1,6 @@
 import React from 'react';
 import { Slider } from "@/components/ui/slider";
 import { Card } from "@/components/ui/card";
-import { ColorPicker } from "@/components/ui/color-picker";
 
 interface ControlPanelProps {
   parameters: {
