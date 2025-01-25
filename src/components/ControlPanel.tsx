@@ -1,6 +1,7 @@
 import React from 'react';
 import { Slider } from "@/components/ui/slider";
 import { Card } from "@/components/ui/card";
+import { ColorPicker } from "@/components/ui/color-picker";
 
 interface ControlPanelProps {
   parameters: {
@@ -10,8 +11,14 @@ interface ControlPanelProps {
     sunIntensity: number;
     noiseScale: number;
     noiseOctaves: number;
+    cloudDensity: number;
+    cloudHeight: number;
+    windSpeed: number;
+    sunDirection: { x: number; y: number; z: number };
+    sunColor: string;
+    skyColor: string;
   };
-  onParameterChange: (param: string, value: number) => void;
+  onParameterChange: (param: string, value: number | string | { x: number; y: number; z: number }) => void;
 }
 
 const ControlPanel: React.FC<ControlPanelProps> = ({ parameters, onParameterChange }) => {
@@ -56,35 +63,35 @@ const ControlPanel: React.FC<ControlPanelProps> = ({ parameters, onParameterChan
       </div>
 
       <div className="parameter-group">
-        <h3 className="parameter-group-title">Lighting</h3>
+        <h3 className="parameter-group-title">Cloud Shape</h3>
         
         <div className="space-y-4">
           <div>
             <div className="parameter-label">
-              <span>Light Sample Distance</span>
-              <span className="parameter-value">{parameters.lightSampleDist.toFixed(2)}</span>
+              <span>Cloud Density</span>
+              <span className="parameter-value">{parameters.cloudDensity.toFixed(2)}</span>
             </div>
             <Slider
-              value={[parameters.lightSampleDist]}
+              value={[parameters.cloudDensity]}
               min={0.1}
-              max={1.0}
+              max={2.0}
               step={0.01}
-              onValueChange={([value]) => onParameterChange('lightSampleDist', value)}
+              onValueChange={([value]) => onParameterChange('cloudDensity', value)}
               className="parameter-slider"
             />
           </div>
 
           <div>
             <div className="parameter-label">
-              <span>Sun Intensity</span>
-              <span className="parameter-value">{parameters.sunIntensity.toFixed(2)}</span>
+              <span>Cloud Height</span>
+              <span className="parameter-value">{parameters.cloudHeight.toFixed(2)}</span>
             </div>
             <Slider
-              value={[parameters.sunIntensity]}
-              min={0.1}
-              max={2.0}
-              step={0.01}
-              onValueChange={([value]) => onParameterChange('sunIntensity', value)}
+              value={[parameters.cloudHeight]}
+              min={0.5}
+              max={3.0}
+              step={0.1}
+              onValueChange={([value]) => onParameterChange('cloudHeight', value)}
               className="parameter-slider"
             />
           </div>
@@ -92,36 +99,102 @@ const ControlPanel: React.FC<ControlPanelProps> = ({ parameters, onParameterChan
       </div>
 
       <div className="parameter-group">
-        <h3 className="parameter-group-title">Noise</h3>
+        <h3 className="parameter-group-title">Animation</h3>
         
         <div className="space-y-4">
           <div>
             <div className="parameter-label">
-              <span>Noise Scale</span>
-              <span className="parameter-value">{parameters.noiseScale.toFixed(2)}</span>
+              <span>Wind Speed</span>
+              <span className="parameter-value">{parameters.windSpeed.toFixed(2)}</span>
             </div>
             <Slider
-              value={[parameters.noiseScale]}
-              min={0.5}
-              max={5.0}
-              step={0.1}
-              onValueChange={([value]) => onParameterChange('noiseScale', value)}
+              value={[parameters.windSpeed]}
+              min={0.0}
+              max={2.0}
+              step={0.01}
+              onValueChange={([value]) => onParameterChange('windSpeed', value)}
+              className="parameter-slider"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="parameter-group">
+        <h3 className="parameter-group-title">Sun Direction</h3>
+        
+        <div className="space-y-4">
+          <div>
+            <div className="parameter-label">
+              <span>X</span>
+              <span className="parameter-value">{parameters.sunDirection.x.toFixed(2)}</span>
+            </div>
+            <Slider
+              value={[parameters.sunDirection.x]}
+              min={-1.0}
+              max={1.0}
+              step={0.01}
+              onValueChange={([value]) => onParameterChange('sunDirection', { ...parameters.sunDirection, x: value })}
               className="parameter-slider"
             />
           </div>
 
           <div>
             <div className="parameter-label">
-              <span>Noise Octaves</span>
-              <span className="parameter-value">{parameters.noiseOctaves}</span>
+              <span>Y</span>
+              <span className="parameter-value">{parameters.sunDirection.y.toFixed(2)}</span>
             </div>
             <Slider
-              value={[parameters.noiseOctaves]}
-              min={1}
-              max={8}
-              step={1}
-              onValueChange={([value]) => onParameterChange('noiseOctaves', value)}
+              value={[parameters.sunDirection.y]}
+              min={-1.0}
+              max={1.0}
+              step={0.01}
+              onValueChange={([value]) => onParameterChange('sunDirection', { ...parameters.sunDirection, y: value })}
               className="parameter-slider"
+            />
+          </div>
+
+          <div>
+            <div className="parameter-label">
+              <span>Z</span>
+              <span className="parameter-value">{parameters.sunDirection.z.toFixed(2)}</span>
+            </div>
+            <Slider
+              value={[parameters.sunDirection.z]}
+              min={-1.0}
+              max={1.0}
+              step={0.01}
+              onValueChange={([value]) => onParameterChange('sunDirection', { ...parameters.sunDirection, z: value })}
+              className="parameter-slider"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="parameter-group">
+        <h3 className="parameter-group-title">Colors</h3>
+        
+        <div className="space-y-4">
+          <div>
+            <div className="parameter-label">
+              <span>Sun Color</span>
+            </div>
+            <input
+              type="color"
+              value={parameters.sunColor}
+              onChange={(e) => onParameterChange('sunColor', e.target.value)}
+              className="w-full h-8 rounded cursor-pointer"
+            />
+          </div>
+
+          <div>
+            <div className="parameter-label">
+              <span>Sky Color</span>
+            </div>
+            <input
+              type="color"
+              value={parameters.skyColor}
+              onChange={(e) => onParameterChange('skyColor', e.target.value)}
+              className="w-full h-8 rounded cursor-pointer"
             />
           </div>
         </div>

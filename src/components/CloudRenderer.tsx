@@ -11,6 +11,12 @@ interface CloudRendererProps {
     sunIntensity: number;
     noiseScale: number;
     noiseOctaves: number;
+    cloudDensity: number;
+    cloudHeight: number;
+    windSpeed: number;
+    sunDirection: { x: number; y: number; z: number };
+    sunColor: string;
+    skyColor: string;
   };
 }
 
@@ -31,6 +37,12 @@ uniform float uLightSampleDist;
 uniform float uSunIntensity;
 uniform float uNoiseScale;
 uniform int uNoiseOctaves;
+uniform float uCloudDensity;
+uniform float uCloudHeight;
+uniform float uWindSpeed;
+uniform vec3 uSunDirection;
+uniform vec3 uSunColor;
+uniform vec3 uSkyColor;
 
 const vec3 SUN_DIR = normalize(vec3(-0.8, 0.6, 0.3));
 const vec3 SUN_COLOR = vec3(1.0, 0.6, 0.3);
@@ -101,6 +113,12 @@ ${fragmentShaderSource}
     gl.uniform1f(gl.getUniformLocation(program, 'uSunIntensity'), parameters.sunIntensity);
     gl.uniform1f(gl.getUniformLocation(program, 'uNoiseScale'), parameters.noiseScale);
     gl.uniform1i(gl.getUniformLocation(program, 'uNoiseOctaves'), parameters.noiseOctaves);
+    gl.uniform1f(gl.getUniformLocation(program, 'uCloudDensity'), parameters.cloudDensity);
+    gl.uniform1f(gl.getUniformLocation(program, 'uCloudHeight'), parameters.cloudHeight);
+    gl.uniform1f(gl.getUniformLocation(program, 'uWindSpeed'), parameters.windSpeed);
+    gl.uniform3f(gl.getUniformLocation(program, 'uSunDirection'), parameters.sunDirection.x, parameters.sunDirection.y, parameters.sunDirection.z);
+    gl.uniform3f(gl.getUniformLocation(program, 'uSunColor'), parseInt(parameters.sunColor.slice(1), 16) / 0xFFFFFF, parseInt(parameters.sunColor.slice(1), 16) / 0xFFFFFF, parseInt(parameters.sunColor.slice(1), 16) / 0xFFFFFF);
+    gl.uniform3f(gl.getUniformLocation(program, 'uSkyColor'), parseInt(parameters.skyColor.slice(1), 16) / 0xFFFFFF, parseInt(parameters.skyColor.slice(1), 16) / 0xFFFFFF, parseInt(parameters.skyColor.slice(1), 16) / 0xFFFFFF);
   }, [parameters]);
 
   const initWebGL = (gl: WebGLRenderingContext) => {
@@ -208,6 +226,12 @@ const fragmentShaderSource = `
   uniform float uSunIntensity;
   uniform float uNoiseScale;
   uniform int uNoiseOctaves;
+  uniform float uCloudDensity;
+  uniform float uCloudHeight;
+  uniform float uWindSpeed;
+  uniform vec3 uSunDirection;
+  uniform vec3 uSunColor;
+  uniform vec3 uSkyColor;
 
   const vec3 SUN_DIR = normalize(vec3(-0.8, 0.6, 0.3));
   const vec3 SUN_COLOR = vec3(1.0, 0.6, 0.3);
@@ -251,9 +275,9 @@ const fragmentShaderSource = `
   }
 
   float sampleDensity(vec3 p) {
-    float base = 1.0 - length(p) / 1.5;
-    float noise = fbm(p + vec3(0.0, uTime * 0.1, 0.0));
-    return max(0.0, base + noise * 0.5);
+    float base = 1.0 - length(p) / (1.5 * uCloudHeight);
+    float noise = fbm(p + vec3(uTime * uWindSpeed, 0.0, 0.0));
+    return max(0.0, base + noise * 0.5) * uCloudDensity;
   }
 
   vec3 raymarch(vec3 ro, vec3 rd) {
@@ -268,10 +292,10 @@ const fragmentShaderSource = `
       float density = sampleDensity(p);
       
       if(density > 0.0) {
-        float lightDensity = sampleDensity(p + SUN_DIR * uLightSampleDist);
+        float lightDensity = sampleDensity(p + uSunDirection * uLightSampleDist);
         float shadow = exp(-lightDensity * uLightSampleDist * 2.0);
         
-        vec3 illumination = mix(SKY_COLOR, SUN_COLOR * uSunIntensity * shadow, 0.5);
+        vec3 illumination = mix(uSkyColor, uSunColor * uSunIntensity * shadow, 0.5);
         color += transmittance * density * uStepSize * illumination;
         transmittance *= exp(-density * uStepSize);
         
@@ -281,7 +305,7 @@ const fragmentShaderSource = `
       t += uStepSize;
     }
     
-    return color + SKY_COLOR * transmittance;
+    return color + uSkyColor * transmittance;
   }
 
   void main() {
