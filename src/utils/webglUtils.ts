@@ -17,46 +17,68 @@ export const initWebGL = (
     return null;
   }
 
-  // Create and bind vertex buffer
+  // Create and bind vertex buffer (only once)
   const positions = new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]);
   const positionBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
   gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
 
-  return program;
+  // Cache uniform locations
+  const uniformLocations = {
+    uTime: gl.getUniformLocation(program, 'uTime'),
+    uFrame: gl.getUniformLocation(program, 'uFrame'),
+    uStepSize: gl.getUniformLocation(program, 'uStepSize'),
+    uMaxSteps: gl.getUniformLocation(program, 'uMaxSteps'),
+    uLightSampleDist: gl.getUniformLocation(program, 'uLightSampleDist'),
+    uSunIntensity: gl.getUniformLocation(program, 'uSunIntensity'),
+    uNoiseScale: gl.getUniformLocation(program, 'uNoiseScale'),
+    uNoiseOctaves: gl.getUniformLocation(program, 'uNoiseOctaves'),
+    uCloudDensity: gl.getUniformLocation(program, 'uCloudDensity'),
+    uCloudHeight: gl.getUniformLocation(program, 'uCloudHeight'),
+    uWindSpeed: gl.getUniformLocation(program, 'uWindSpeed'),
+    uSunDirection: gl.getUniformLocation(program, 'uSunDirection'),
+    uSunColor: gl.getUniformLocation(program, 'uSunColor'),
+    uSkyColor: gl.getUniformLocation(program, 'uSkyColor')
+  };
+
+  return { program, uniformLocations };
 };
 
 export const updateUniforms = (
   gl: WebGLRenderingContext,
-  program: WebGLProgram,
+  programInfo: { program: WebGLProgram; uniformLocations: any },
   parameters: any
 ) => {
+  const { program, uniformLocations } = programInfo;
   gl.useProgram(program);
-  gl.uniform1f(gl.getUniformLocation(program, 'uStepSize'), parameters.stepSize);
-  gl.uniform1i(gl.getUniformLocation(program, 'uMaxSteps'), parameters.maxSteps);
-  gl.uniform1f(gl.getUniformLocation(program, 'uLightSampleDist'), parameters.lightSampleDist);
-  gl.uniform1f(gl.getUniformLocation(program, 'uSunIntensity'), parameters.sunIntensity);
-  gl.uniform1f(gl.getUniformLocation(program, 'uNoiseScale'), parameters.noiseScale);
-  gl.uniform1i(gl.getUniformLocation(program, 'uNoiseOctaves'), parameters.noiseOctaves);
-  gl.uniform1f(gl.getUniformLocation(program, 'uCloudDensity'), parameters.cloudDensity);
-  gl.uniform1f(gl.getUniformLocation(program, 'uCloudHeight'), parameters.cloudHeight);
-  gl.uniform1f(gl.getUniformLocation(program, 'uWindSpeed'), parameters.windSpeed);
+
+  // Update uniforms using cached locations
+  gl.uniform1f(uniformLocations.uStepSize, parameters.stepSize);
+  gl.uniform1i(uniformLocations.uMaxSteps, parameters.maxSteps);
+  gl.uniform1f(uniformLocations.uLightSampleDist, parameters.lightSampleDist);
+  gl.uniform1f(uniformLocations.uSunIntensity, parameters.sunIntensity);
+  gl.uniform1f(uniformLocations.uNoiseScale, parameters.noiseScale);
+  gl.uniform1i(uniformLocations.uNoiseOctaves, parameters.noiseOctaves);
+  gl.uniform1f(uniformLocations.uCloudDensity, parameters.cloudDensity);
+  gl.uniform1f(uniformLocations.uCloudHeight, parameters.cloudHeight);
+  gl.uniform1f(uniformLocations.uWindSpeed, parameters.windSpeed);
   gl.uniform3f(
-    gl.getUniformLocation(program, 'uSunDirection'),
+    uniformLocations.uSunDirection,
     parameters.sunDirection.x,
     parameters.sunDirection.y,
     parameters.sunDirection.z
   );
-  gl.uniform3f(
-    gl.getUniformLocation(program, 'uSunColor'),
-    parseInt(parameters.sunColor.slice(1), 16) / 0xFFFFFF,
-    parseInt(parameters.sunColor.slice(1), 16) / 0xFFFFFF,
-    parseInt(parameters.sunColor.slice(1), 16) / 0xFFFFFF
-  );
-  gl.uniform3f(
-    gl.getUniformLocation(program, 'uSkyColor'),
-    parseInt(parameters.skyColor.slice(1), 16) / 0xFFFFFF,
-    parseInt(parameters.skyColor.slice(1), 16) / 0xFFFFFF,
-    parseInt(parameters.skyColor.slice(1), 16) / 0xFFFFFF
-  );
+
+  // Convert hex colors to RGB
+  const sunColor = hexToRGB(parameters.sunColor);
+  const skyColor = hexToRGB(parameters.skyColor);
+  gl.uniform3f(uniformLocations.uSunColor, sunColor.r, sunColor.g, sunColor.b);
+  gl.uniform3f(uniformLocations.uSkyColor, skyColor.r, skyColor.g, skyColor.b);
+};
+
+const hexToRGB = (hex: string) => {
+  const r = parseInt(hex.slice(1, 3), 16) / 255;
+  const g = parseInt(hex.slice(3, 5), 16) / 255;
+  const b = parseInt(hex.slice(5, 7), 16) / 255;
+  return { r, g, b };
 };
