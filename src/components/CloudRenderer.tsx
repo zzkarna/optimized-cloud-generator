@@ -23,10 +23,15 @@ interface CloudRendererProps {
   };
 }
 
+interface ProgramInfo {
+  program: WebGLProgram;
+  uniformLocations: any;
+}
+
 const CloudRenderer: React.FC<CloudRendererProps> = ({ parameters }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const glRef = useRef<WebGLRenderingContext | null>(null);
-  const programRef = useRef<WebGLProgram | null>(null);
+  const programInfoRef = useRef<ProgramInfo | null>(null);
   const frameRef = useRef<number>(0);
 
   const handleDownload = () => {
@@ -61,10 +66,10 @@ const CloudRenderer: React.FC<CloudRendererProps> = ({ parameters }) => {
 
     const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
     const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
-    const program = initWebGL(gl, vertexShader, fragmentShader);
+    const programInfo = initWebGL(gl, vertexShader, fragmentShader);
     
-    if (!program) return;
-    programRef.current = program;
+    if (!programInfo) return;
+    programInfoRef.current = programInfo;
 
     const animate = (time: number) => {
       render(time);
@@ -80,27 +85,27 @@ const CloudRenderer: React.FC<CloudRendererProps> = ({ parameters }) => {
   }, []);
 
   useEffect(() => {
-    if (!glRef.current || !programRef.current) return;
-    updateUniforms(glRef.current, programRef.current, parameters);
+    if (!glRef.current || !programInfoRef.current) return;
+    updateUniforms(glRef.current, programInfoRef.current, parameters);
   }, [parameters]);
 
   const render = (time: number) => {
     const gl = glRef.current;
-    const program = programRef.current;
-    if (!gl || !program) return;
+    const programInfo = programInfoRef.current;
+    if (!gl || !programInfo) return;
 
     const canvas = gl.canvas as HTMLCanvasElement;
     canvas.width = canvas.clientWidth;
     canvas.height = canvas.clientHeight;
     gl.viewport(0, 0, canvas.width, canvas.height);
 
-    gl.useProgram(program);
-    const positionLocation = gl.getAttribLocation(program, 'position');
+    gl.useProgram(programInfo.program);
+    const positionLocation = gl.getAttribLocation(programInfo.program, 'position');
     gl.enableVertexAttribArray(positionLocation);
     gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
 
-    gl.uniform1f(gl.getUniformLocation(program, 'uTime'), time * 0.001);
-    gl.uniform1f(gl.getUniformLocation(program, 'uFrame'), frameRef.current);
+    gl.uniform1f(gl.getUniformLocation(programInfo.program, 'uTime'), time * 0.001);
+    gl.uniform1f(gl.getUniformLocation(programInfo.program, 'uFrame'), frameRef.current);
 
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   };
