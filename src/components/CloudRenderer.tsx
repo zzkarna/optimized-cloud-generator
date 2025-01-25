@@ -20,17 +20,41 @@ const CloudRenderer: React.FC<CloudRendererProps> = ({ parameters }) => {
   const programRef = useRef<WebGLProgram | null>(null);
   const frameRef = useRef<number>(0);
 
+  const generateShaderCode = () => {
+    return `
+// Cloud Shader for Three.js
+uniform float uTime;
+uniform vec3 uCameraPosition;
+uniform float uStepSize;
+uniform int uMaxSteps;
+uniform float uLightSampleDist;
+uniform float uSunIntensity;
+uniform float uNoiseScale;
+uniform int uNoiseOctaves;
+
+const vec3 SUN_DIR = normalize(vec3(-0.8, 0.6, 0.3));
+const vec3 SUN_COLOR = vec3(1.0, 0.6, 0.3);
+const vec3 SKY_COLOR = vec3(0.6, 0.6, 0.75);
+
+${fragmentShaderSource}
+`;
+  };
+
   const handleDownload = () => {
-    if (!canvasRef.current) return;
-    
     try {
+      const shaderCode = generateShaderCode();
+      const blob = new Blob([shaderCode], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.download = 'cloud-render.png';
-      link.href = canvasRef.current.toDataURL('image/png');
+      link.href = url;
+      link.download = 'cloudShader.glsl';
+      document.body.appendChild(link);
       link.click();
-      toast.success("Image downloaded successfully");
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast.success("Shader code downloaded successfully");
     } catch (error) {
-      toast.error("Failed to download image");
+      toast.error("Failed to download shader code");
       console.error("Download error:", error);
     }
   };
@@ -144,7 +168,7 @@ const CloudRenderer: React.FC<CloudRendererProps> = ({ parameters }) => {
         variant="secondary"
       >
         <Download className="mr-2" />
-        Download
+        Download Shader
       </Button>
     </div>
   );
